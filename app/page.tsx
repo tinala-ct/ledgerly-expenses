@@ -2,7 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import styles from './home.module.css';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import authStyles from './auth.module.css';
+import { isSupabaseConfigured, setRememberMe, supabase } from '@/lib/supabase';
 import { Expense } from '@/lib/types';
 
 type Category = { id: string; name: string; emoji: string; color: string };
@@ -21,12 +22,14 @@ export default function Home() {
   const [spentOn, setSpentOn] = useState(today()); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState(''); const [settings, setSettings] = useState(false); const [newName, setNewName] = useState(''); const [newEmoji, setNewEmoji] = useState('🌷');
   const [editing, setEditing] = useState<Expense | null>(null); const [confirmClear, setConfirmClear] = useState(false);
+  const [signedIn, setSignedIn] = useState(!isSupabaseConfigured); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [remember, setRemember] = useState(true);
 
   const load = async () => {
     setLoading(true);
     if (!supabase) { setEntries(JSON.parse(localStorage.getItem('ledgerly-demo') || '[]')); const saved = localStorage.getItem('ledgerly-categories'); if (saved) setCategories(JSON.parse(saved)); setLoading(false); return; }
     const { data: session } = await supabase.auth.getSession();
-    if (!session.session) { setNotice('กรุณาเข้าสู่ระบบเพื่อบันทึกลง cloud'); setLoading(false); return; }
+    if (!session.session) { setSignedIn(false); setLoading(false); return; }
+    setSignedIn(true);
     const [expenses, configured] = await Promise.all([supabase.from('expenses').select('*').order('spent_on', { ascending: false }), supabase.from('expense_categories').select('*').order('created_at')]);
     if (expenses.error) setNotice('โหลดข้อมูลไม่ได้: ' + expenses.error.message); else setEntries(expenses.data as Expense[]);
     if (!configured.error && configured.data?.length) setCategories([...defaults, ...configured.data as Category[]]);
@@ -53,6 +56,9 @@ export default function Home() {
     setNewName(''); setNewEmoji('🌷'); setSettings(false);
   };
   const exportReport = () => { sessionStorage.setItem('ledgerly-report', JSON.stringify({ entries, total: entries.reduce((s, x) => s + Number(x.amount), 0), range: { start: entries.at(-1)?.spent_on || today(), end: today() } })); window.open('/report', '_blank'); };
+  const signIn = async (event: FormEvent) => { event.preventDefault(); if (!supabase) return; setNotice(''); setRememberMe(remember); const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) return setNotice('เข้าสู่ระบบไม่สำเร็จ: ' + error.message); setPassword(''); await load(); };
+
+  if (isSupabaseConfigured && !signedIn) return <main className={authStyles.screen}><section className={authStyles.card}><span className={authStyles.mark}>L</span><h1>ยินดีต้อนรับ</h1><p>เข้าสู่ระบบเพื่อดูและบันทึกรายจ่ายของคุณ</p><form onSubmit={signIn}><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" autoComplete="email" required/><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" autoComplete="current-password" required/><label className={authStyles.remember}><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)}/> จดจำฉันในอุปกรณ์นี้</label><button>เข้าสู่ระบบ</button></form>{notice && <p className={authStyles.error}>{notice}</p>}<p className={authStyles.hint}>หากเป็นอุปกรณ์สาธารณะ ให้เอาเครื่องหมาย “จดจำฉัน” ออก</p></section></main>;
 
   return <main className={styles.shell}><header className={styles.header}><span className={styles.logo}>L</span><div><p>วันนี้</p><h1>{new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long' })}</h1></div><button className={styles.settings} onClick={() => setSettings(true)} aria-label="ตั้งค่าหมวดหมู่">⚙</button></header>
     <section className={styles.balance}><span>ใช้ไปวันนี้</span><strong>{money.format(total)}</strong><button onClick={exportReport}>รายงาน PDF ↗</button><button className={styles.settle} onClick={() => setConfirmClear(true)}>คิดบัญชีแล้ว</button></section>
