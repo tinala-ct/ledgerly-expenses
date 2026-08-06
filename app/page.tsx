@@ -26,13 +26,15 @@ export default function Home() {
 
   const load = async () => {
     setLoading(true);
-    if (!supabase) { setEntries(JSON.parse(localStorage.getItem('ledgerly-demo') || '[]')); const saved = localStorage.getItem('ledgerly-categories'); if (saved) setCategories(JSON.parse(saved)); setLoading(false); return; }
+    const savedCategories = JSON.parse(localStorage.getItem('ledgerly-categories') || '[]') as Category[];
+    if (!supabase) { setEntries(JSON.parse(localStorage.getItem('ledgerly-demo') || '[]')); if (savedCategories.length) setCategories([...defaults, ...savedCategories]); setLoading(false); return; }
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) { setSignedIn(false); setLoading(false); return; }
     setSignedIn(true);
     const [expenses, configured] = await Promise.all([supabase.from('expenses').select('*').order('spent_on', { ascending: false }), supabase.from('expense_categories').select('*').order('created_at')]);
     if (expenses.error) setNotice('โหลดข้อมูลไม่ได้: ' + expenses.error.message); else setEntries(expenses.data as Expense[]);
-    if (!configured.error && configured.data?.length) setCategories([...defaults, ...configured.data as Category[]]);
+    if (!configured.error && configured.data?.length) setCategories([...defaults, ...configured.data as Category[], ...savedCategories]);
+    else if (savedCategories.length) setCategories([...defaults, ...savedCategories]);
     setLoading(false);
   };
   useEffect(() => { void load(); }, []);
@@ -51,8 +53,8 @@ export default function Home() {
   const clearAll = async () => { if (supabase) { const { error } = await supabase.from('expenses').delete().gt('amount', 0); if (error) return setNotice('ล้างข้อมูลไม่สำเร็จ: ' + error.message); } else localStorage.removeItem('ledgerly-demo'); setEntries([]); setConfirmClear(false); setNotice('เริ่มรอบบัญชีใหม่แล้ว'); };
   const addCategory = async (event: FormEvent) => {
     event.preventDefault(); if (!newName.trim() || !newEmoji.trim()) return; const item = { id: crypto.randomUUID(), name: newName.trim(), emoji: newEmoji.trim(), color: '#7b8ec8' };
-    if (supabase) { const { data, error } = await supabase.from('expense_categories').insert({ name: item.name, emoji: item.emoji, color: item.color }).select().single(); if (error) return setNotice('เพิ่มหมวดไม่ได้: ' + error.message); setCategories((old) => [...old, data as Category]); setSelected(data as Category); }
-    else { const next = [...categories, item]; localStorage.setItem('ledgerly-categories', JSON.stringify(next)); setCategories(next); setSelected(item); }
+    if (supabase) { const { data, error } = await supabase.from('expense_categories').insert({ name: item.name, emoji: item.emoji, color: item.color }).select().single(); if (!error) { setCategories((old) => [...old, data as Category]); setSelected(data as Category); } else { const localOnly = [...JSON.parse(localStorage.getItem('ledgerly-categories') || '[]'), item]; localStorage.setItem('ledgerly-categories', JSON.stringify(localOnly)); setCategories((old) => [...old, item]); setSelected(item); setNotice('เพิ่มหมวดในอุปกรณ์นี้แล้ว'); } }
+    else { const localOnly = [...JSON.parse(localStorage.getItem('ledgerly-categories') || '[]'), item]; localStorage.setItem('ledgerly-categories', JSON.stringify(localOnly)); setCategories((old) => [...old, item]); setSelected(item); }
     setNewName(''); setNewEmoji('🌷'); setSettings(false);
   };
   const exportReport = () => { sessionStorage.setItem('ledgerly-report', JSON.stringify({ entries, total: entries.reduce((s, x) => s + Number(x.amount), 0), range: { start: entries.at(-1)?.spent_on || today(), end: today() } })); window.open('/report', '_blank'); };
