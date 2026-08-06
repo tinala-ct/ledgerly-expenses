@@ -1,0 +1,44 @@
+.qrBlock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  margin-top: 32px;
+  padding: 22px 24px;
+  border: 1px solid #dce5e0;
+  background: #f5faf7;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.qrBlock p {
+  margin: 0 0 5px;
+  color: #176b58;
+  font: 11px 'DM Mono', monospace;
+  letter-spacing: 1.5px;
+}
+
+.qrBlock h2 {
+  margin: 0;
+  font: 600 24px 'Playfair Display', 'Noto Sans Thai', serif;
+}
+
+.qrBlock span {
+  display: block;
+  margin-top: 5px;
+  color: #61716b;
+  font-size: 12px;
+}
+
+.qrBlock img {
+  display: block;
+  width: 170px;
+  height: auto;
+  background: #fff;
+}
+
+@media (max-width: 560px) {
+  .qrBlock { padding: 16px; gap: 12px; }
+  .qrBlock h2 { font-size: 19px; }
+  .qrBlock img { width: 125px; }
+}
