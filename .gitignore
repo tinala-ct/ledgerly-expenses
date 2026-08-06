@@ -1,0 +1,14 @@
+# Local environment values — never commit these
+.env.local
+.env*.local
+
+# Next.js and dependencies
+.next/
+node_modules/
+
+# Local tooling
+.DS_Store
+*.log
+
+# Separate local repository; it is not part of this web app
+ExP/
