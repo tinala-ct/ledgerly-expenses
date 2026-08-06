@@ -4,3 +4,6 @@
 
 /* The break follows the final transaction page, so QR is always the final page. */
 @media print{.transactions{break-after:page;page-break-after:always}.qrPage{break-before:auto!important;page-break-before:auto!important}}
+
+/* Keep the final QR card safely inside one A4 page in iOS Safari. */
+@media print{.qrPage{display:flex;height:175mm!important;min-height:0!important;padding:0;align-items:flex-start!important;justify-content:center}.qrCard{width:85mm;height:175mm;min-height:0!important;padding:7mm;gap:5mm;overflow:hidden}.qrCard img{width:48mm}.qrCard h2{font-size:18px}.qrCard>div:first-child span,.account{font-size:9px}}
