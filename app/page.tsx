@@ -1,100 +1,59 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import styles from './home.module.css';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { categories, Expense } from '@/lib/types';
+import { Expense } from '@/lib/types';
 
+type Category = { id: string; name: string; emoji: string; color: string };
+const defaults: Category[] = [
+  { id: 'food', name: 'อาหาร', emoji: '🍜', color: '#e96c73' }, { id: 'coffee', name: 'กาแฟ', emoji: '☕', color: '#a47558' },
+  { id: 'travel', name: 'เดินทาง', emoji: '🚗', color: '#6e92d8' }, { id: 'shopping', name: 'ช้อปปิ้ง', emoji: '🛍️', color: '#ba7aca' },
+  { id: 'home', name: 'บิลและบ้าน', emoji: '🏠', color: '#e3ab54' }, { id: 'health', name: 'สุขภาพ', emoji: '💊', color: '#62a98a' },
+  { id: 'fun', name: 'บันเทิง', emoji: '🎬', color: '#7f82d9' }, { id: 'other', name: 'อื่น ๆ', emoji: '✨', color: '#87949b' },
+];
 const today = () => new Date().toISOString().slice(0, 10);
-const currency = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 });
-const dateFormat = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-
-function monthBounds() {
-  const d = new Date();
-  return { start: new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10), end: today() };
-}
+const money = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 });
 
 export default function Home() {
-  const [entries, setEntries] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [signedIn, setSignedIn] = useState(!isSupabaseConfigured);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [range, setRange] = useState(monthBounds);
-  const [form, setForm] = useState({ title: '', amount: '', category: categories[0], spent_on: today(), note: '' });
+  const [entries, setEntries] = useState<Expense[]>([]); const [categories, setCategories] = useState<Category[]>(defaults);
+  const [selected, setSelected] = useState<Category>(defaults[0]); const [amount, setAmount] = useState(''); const [note, setNote] = useState('');
+  const [spentOn, setSpentOn] = useState(today()); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState(''); const [settings, setSettings] = useState(false); const [newName, setNewName] = useState(''); const [newEmoji, setNewEmoji] = useState('🌷');
 
   const load = async () => {
     setLoading(true);
-    if (!supabase) {
-      const raw = localStorage.getItem('ledgerly-demo');
-      setEntries(raw ? JSON.parse(raw) : []);
-      setLoading(false);
-      return;
-    }
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) { setSignedIn(false); setEntries([]); setLoading(false); return; }
-    setSignedIn(true);
-    const { data, error } = await supabase.from('expenses').select('*').order('spent_on', { ascending: false }).order('created_at', { ascending: false });
-    if (error) setNotice('โหลดข้อมูลไม่ได้: ' + error.message);
-    else setEntries(data as Expense[]);
+    if (!supabase) { setEntries(JSON.parse(localStorage.getItem('ledgerly-demo') || '[]')); const saved = localStorage.getItem('ledgerly-categories'); if (saved) setCategories(JSON.parse(saved)); setLoading(false); return; }
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) { setNotice('กรุณาเข้าสู่ระบบเพื่อบันทึกลง cloud'); setLoading(false); return; }
+    const [expenses, configured] = await Promise.all([supabase.from('expenses').select('*').order('spent_on', { ascending: false }), supabase.from('expense_categories').select('*').order('created_at')]);
+    if (expenses.error) setNotice('โหลดข้อมูลไม่ได้: ' + expenses.error.message); else setEntries(expenses.data as Expense[]);
+    if (!configured.error && configured.data?.length) setCategories([...defaults, ...configured.data as Category[]]);
     setLoading(false);
   };
-
   useEffect(() => { void load(); }, []);
-
-  const signIn = async (event: FormEvent) => {
-    event.preventDefault(); if (!supabase) return;
-    setNotice('');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return setNotice('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
-    setPassword(''); setNotice('เข้าสู่ระบบแล้ว'); await load();
-  };
-
-  const displayed = useMemo(() => entries.filter((item) => item.spent_on >= range.start && item.spent_on <= range.end), [entries, range]);
-  const total = displayed.reduce((sum, item) => sum + Number(item.amount), 0);
-  const todayTotal = entries.filter((item) => item.spent_on === today()).reduce((sum, item) => sum + Number(item.amount), 0);
+  const total = useMemo(() => entries.filter((x) => x.spent_on === today()).reduce((sum, x) => sum + Number(x.amount), 0), [entries]);
+  const iconFor = (category: string) => categories.find((x) => x.name === category) || defaults.find((x) => x.name === category) || defaults.at(-1)!;
 
   const save = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!form.title.trim() || !Number(form.amount)) return setNotice('กรุณากรอกรายการและจำนวนเงิน');
-    setSaving(true); setNotice('');
-    const item: Expense = { id: crypto.randomUUID(), title: form.title.trim(), amount: Number(form.amount), category: form.category, spent_on: form.spent_on, note: form.note.trim() || null };
-    if (supabase) {
-      const { data, error } = await supabase.from('expenses').insert({ title: item.title, amount: item.amount, category: item.category, spent_on: item.spent_on, note: item.note }).select().single();
-      if (error) setNotice('บันทึกไม่สำเร็จ: ' + error.message);
-      else { setEntries((old) => [data as Expense, ...old]); setNotice('บันทึกแล้ว'); }
-    } else {
-      const next = [item, ...entries]; localStorage.setItem('ledgerly-demo', JSON.stringify(next)); setEntries(next); setNotice('บันทึกในเครื่องแล้ว — เชื่อม Supabase เพื่อเก็บถาวร');
-    }
-    setSaving(false); setForm((old) => ({ ...old, title: '', amount: '', note: '' }));
+    event.preventDefault(); if (!Number(amount)) return setNotice('ใส่จำนวนเงินก่อน'); setSaving(true); setNotice('');
+    const item: Expense = { id: crypto.randomUUID(), title: note.trim() || selected.name, amount: Number(amount), category: selected.name, spent_on: spentOn, note: note.trim() || null };
+    if (supabase) { const { data, error } = await supabase.from('expenses').insert({ title: item.title, amount: item.amount, category: item.category, spent_on: item.spent_on, note: item.note }).select().single(); if (error) setNotice('บันทึกไม่สำเร็จ: ' + error.message); else setEntries((old) => [data as Expense, ...old]); }
+    else { const next = [item, ...entries]; localStorage.setItem('ledgerly-demo', JSON.stringify(next)); setEntries(next); }
+    setAmount(''); setNote(''); setSaving(false);
   };
-
-  const remove = async (id: string) => {
-    if (!confirm('ลบรายการนี้?')) return;
-    if (supabase) { const { error } = await supabase.from('expenses').delete().eq('id', id); if (error) return setNotice('ลบไม่สำเร็จ: ' + error.message); }
-    const next = entries.filter((x) => x.id !== id); setEntries(next); if (!supabase) localStorage.setItem('ledgerly-demo', JSON.stringify(next));
+  const addCategory = async (event: FormEvent) => {
+    event.preventDefault(); if (!newName.trim() || !newEmoji.trim()) return; const item = { id: crypto.randomUUID(), name: newName.trim(), emoji: newEmoji.trim(), color: '#7b8ec8' };
+    if (supabase) { const { data, error } = await supabase.from('expense_categories').insert({ name: item.name, emoji: item.emoji, color: item.color }).select().single(); if (error) return setNotice('เพิ่มหมวดไม่ได้: ' + error.message); setCategories((old) => [...old, data as Category]); setSelected(data as Category); }
+    else { const next = [...categories, item]; localStorage.setItem('ledgerly-categories', JSON.stringify(next)); setCategories(next); setSelected(item); }
+    setNewName(''); setNewEmoji('🌷'); setSettings(false);
   };
+  const exportReport = () => { sessionStorage.setItem('ledgerly-report', JSON.stringify({ entries, total: entries.reduce((s, x) => s + Number(x.amount), 0), range: { start: entries.at(-1)?.spent_on || today(), end: today() } })); window.open('/report', '_blank'); };
 
-  const exportReport = () => {
-    sessionStorage.setItem('ledgerly-report', JSON.stringify({ entries: displayed, total, range }));
-    // Keep the same-origin opener so the new report tab receives this session's report data.
-    window.open('/report', '_blank');
-  };
-
-  return <main>
-    <header className="topbar"><div className="brand"><span className="brand-mark">L</span><span>ledgerly</span></div><div className="status"><i />{isSupabaseConfigured ? (signedIn ? 'Cloud sync enabled' : 'กรุณาเข้าสู่ระบบ') : 'โหมดทดลองในเครื่อง'}</div></header>
-    <section className="hero"><div><p className="eyebrow">PERSONAL EXPENSE TRACKER</p><h1>ทุกบาท มีที่ไป<br/><em>เห็นภาพ</em> ในไม่กี่วินาที</h1><p className="lead">บันทึกรายจ่ายอย่างรวดเร็ว สรุปเป็นรายงาน และเก็บข้อมูลของคุณอย่างปลอดภัย</p></div><div className="today-card"><span>วันนี้คุณใช้ไป</span><strong>{currency.format(todayTotal)}</strong><small>{new Date().toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' })}</small></div></section>
-    {isSupabaseConfigured && !signedIn ? <section className="auth-box"><p className="eyebrow">YOUR PRIVATE LEDGER</p><h2>เข้าสู่ระบบเพื่อเข้าถึงข้อมูลของคุณ</h2><form onSubmit={signIn}><input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"/><input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"/><button className="primary">เข้าสู่ระบบ</button></form><p>สร้างผู้ใช้ครั้งแรกได้ที่ Supabase Authentication → Users</p>{notice && <p className="notice">{notice}</p>}</section> : <>
-    <section className="workspace">
-      <form className="entry-form" onSubmit={save}><div className="section-title"><span>01</span><h2>เพิ่มรายการใหม่</h2></div>
-        <label>รายการ<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="เช่น กาแฟตอนเช้า" autoFocus /></label>
-        <div className="form-grid"><label>จำนวนเงิน<input inputMode="decimal" type="number" min="1" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0" /></label><label>หมวดหมู่<select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>{categories.map((x) => <option key={x}>{x}</option>)}</select></label></div>
-        <div className="form-grid"><label>วันที่<input type="date" value={form.spent_on} onChange={(e) => setForm({ ...form, spent_on: e.target.value })} /></label><label>โน้ต (ไม่บังคับ)<input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="รายละเอียดเพิ่มเติม" /></label></div>
-        <button className="primary" disabled={saving}>{saving ? 'กำลังบันทึก…' : 'บันทึกรายจ่าย  →'}</button>{notice && <p className="notice">{notice}</p>}
-      </form>
-      <section className="summary"><div className="section-title"><span>02</span><h2>ภาพรวมรายจ่าย</h2></div><div className="range"><input type="date" value={range.start} onChange={(e) => setRange({ ...range, start: e.target.value })}/><b>—</b><input type="date" value={range.end} onChange={(e) => setRange({ ...range, end: e.target.value })}/></div><div className="total"><span>รวมในช่วงที่เลือก</span><strong>{currency.format(total)}</strong><small>{displayed.length} รายการ</small></div><button className="secondary" onClick={exportReport}>▣ &nbsp; Export PDF report</button></section>
-    </section>
-    <section className="history"><div className="history-head"><div><p className="eyebrow">RECENT RECORDS</p><h2>รายการล่าสุด</h2></div><span>{loading ? 'กำลังโหลด…' : `${displayed.length} รายการ`}</span></div><div className="records">{!loading && displayed.length === 0 && <p className="empty">ยังไม่มีรายจ่ายในช่วงเวลานี้</p>}{displayed.map((item) => <article className="record" key={item.id}><div className="category-dot"/><div className="record-main"><strong>{item.title}</strong><span>{item.category}{item.note ? ` · ${item.note}` : ''}</span></div><time>{dateFormat.format(new Date(item.spent_on + 'T00:00:00'))}</time><b>{currency.format(Number(item.amount))}</b><button aria-label="ลบรายการ" onClick={() => remove(item.id)}>×</button></article>)}</div></section></>}
+  return <main className={styles.shell}><header className={styles.header}><span className={styles.logo}>L</span><div><p>วันนี้</p><h1>{new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long' })}</h1></div><button className={styles.settings} onClick={() => setSettings(true)} aria-label="ตั้งค่าหมวดหมู่">⚙</button></header>
+    <section className={styles.balance}><span>ใช้ไปวันนี้</span><strong>{money.format(total)}</strong><button onClick={exportReport}>รายงาน PDF ↗</button></section>
+    <form onSubmit={save} className={styles.composer}><div className={styles.amountRow}><span>฿</span><input aria-label="จำนวนเงิน" inputMode="decimal" type="number" min="1" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0"/></div><input className={styles.note} value={note} onChange={(e) => setNote(e.target.value)} placeholder="โน้ตสั้น ๆ (ไม่บังคับ)"/><input className={styles.date} type="date" value={spentOn} onChange={(e) => setSpentOn(e.target.value)}/><p className={styles.pickLabel}>เลือกหมวดหมู่</p><div className={styles.categoryGrid}>{categories.map((item) => <button type="button" key={item.id} className={`${styles.category} ${selected.id === item.id ? styles.active : ''}`} onClick={() => setSelected(item)}><span style={{ backgroundColor: item.color }}>{item.emoji}</span><small>{item.name}</small></button>)}<button type="button" className={styles.category} onClick={() => setSettings(true)}><span className={styles.add}>+</span><small>เพิ่ม</small></button></div><button className={styles.save} disabled={saving}>{saving ? 'กำลังบันทึก…' : `บันทึก · ${selected.emoji}`}</button>{notice && <p className={styles.notice}>{notice}</p>}</form>
+    <section className={styles.recent}><div><p>ล่าสุด</p><h2>รายการใช้จ่าย</h2></div>{loading ? <p>กำลังโหลด…</p> : entries.length === 0 ? <p className={styles.empty}>เริ่มบันทึกรายการแรกได้เลย</p> : entries.slice(0, 8).map((item) => { const icon = iconFor(item.category); return <article key={item.id}><span style={{ backgroundColor: icon.color }}>{icon.emoji}</span><div><b>{item.title}</b><small>{item.category} · {new Date(item.spent_on + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}</small></div><strong>{money.format(Number(item.amount))}</strong></article>; })}</section>
+    {settings && <div className={styles.overlay}><section className={styles.modal}><button className={styles.close} onClick={() => setSettings(false)}>×</button><p>ตั้งค่าหมวดหมู่</p><h2>เพิ่มไอคอนของคุณ</h2><form onSubmit={addCategory}><input aria-label="ไอคอน" className={styles.emojiInput} value={newEmoji} onChange={(e) => setNewEmoji(e.target.value)} maxLength={4}/><input aria-label="ชื่อหมวดหมู่" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="เช่น สัตว์เลี้ยง"/><button className={styles.save}>เพิ่มหมวดหมู่</button></form><small>ใส่ emoji ที่ชอบได้ เช่น 🐶 ✈️ 🎮</small></section></div>}
   </main>;
 }
