@@ -7,3 +7,4 @@
 
 /* Keep the final QR card safely inside one A4 page in iOS Safari. */
 @media print{.qrPage{display:flex;height:175mm!important;min-height:0!important;padding:0;align-items:flex-start!important;justify-content:center}.qrCard{width:85mm;height:175mm;min-height:0!important;padding:7mm;gap:5mm;overflow:hidden}.qrCard img{width:48mm}.qrCard h2{font-size:18px}.qrCard>div:first-child span,.account{font-size:9px}}
+ .homeButton{float:right;margin-right:8px;padding:10px 14px;border:1px solid #cbd3d9;border-radius:3px;background:#fff;color:#33424e;font-size:13px;font-weight:600}@media print{.homeButton{display:none!important}}

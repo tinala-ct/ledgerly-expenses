@@ -29,6 +29,7 @@ export default function ReportPage() {
 
   return <main className={`report ${styles.paper}`}>
     <button className="print-button" onClick={() => window.print()}>Print / Save PDF</button>
+    <button className={styles.homeButton} onClick={() => { window.location.href = '/'; }}>← Back to Home</button>
     <header className={styles.header}><div className={styles.brand}>LEDGERLY</div><p>PERSONAL EXPENSE MANAGER</p><h1>Expense Report</h1><div>{fmt(report.range.start)} - {fmt(report.range.end)}</div></header>
     <section className={styles.summaryGrid} aria-label="Expense summary"><article><p>Total Expenses</p><strong>{formatMoney(report.total)}</strong></article><article><p>Transactions</p><strong>{report.entries.length}</strong></article><article><p>Average per Item</p><strong>{formatMoney(average)}</strong></article><article><p>Highest Expense</p><strong>{highest ? formatMoney(Number(highest.amount)) : '-'}</strong><span>{highest?.title || 'No transactions'}</span></article></section>
     <section className={styles.chartSection}><div><div className={styles.sectionLabel}>SPENDING BY CATEGORY</div><div className={styles.chartPanel}><div className={styles.donut} style={pieStyle}><div><b>{formatMoney(report.total)}</b><span>Total</span></div></div><div className={styles.legend}>{slices.map((slice) => <div key={slice.name}><i style={{ background: slice.color }} /><span>{slice.name}</span><b>{Math.round((slice.amount / safeTotal) * 100)}%</b></div>)}</div></div></div></section>
