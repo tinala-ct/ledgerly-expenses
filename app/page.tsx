@@ -78,7 +78,8 @@ export default function Home() {
 
   const exportReport = () => {
     sessionStorage.setItem('ledgerly-report', JSON.stringify({ entries: displayed, total, range }));
-    window.open('/report', '_blank', 'noopener,noreferrer');
+    // Keep the same-origin opener so the new report tab receives this session's report data.
+    window.open('/report', '_blank');
   };
 
   return <main>
