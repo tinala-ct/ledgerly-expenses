@@ -1,0 +1,103 @@
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.summaryItem {
+  min-width: 0;
+  padding: 13px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.summaryItem span {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+}
+
+.summaryItem strong {
+  display: block;
+  overflow: hidden;
+  color: #fff;
+  font-size: clamp(0.9rem, 3vw, 1.15rem);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outstanding strong { color: #ffe6e9; }
+
+.fundActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fundActions button { width: 100%; }
+.topUpButton { color: #1b3154 !important; background: #fff !important; }
+.settleButton { grid-column: 1 / -1; margin-left: 0 !important; }
+
+.ledger {
+  padding: 20px;
+  border: 1px solid #e9edf4;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(34, 50, 84, 0.08);
+}
+
+.ledgerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ledgerHeader h2 { margin: 0; color: #19233a; font-size: 1.05rem; }
+.ledgerHeader button { border: 0; color: #4567da; background: transparent; font-weight: 800; cursor: pointer; }
+.empty { margin: 0; color: #8a94a8; font-size: 0.9rem; }
+.topUpList { display: grid; gap: 3px; }
+
+.topUpRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #eef1f6;
+}
+
+.topUpRow:first-child { border-top: 0; }
+.topUpMain { min-width: 0; }
+.topUpMain strong, .topUpMain small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topUpMain strong { color: #263149; }
+.topUpMain small { margin-top: 3px; color: #8a94a8; }
+.topUpAmount { color: #16745b; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.deleteButton {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  color: #d65468;
+  background: #fff1f3;
+  cursor: pointer;
+}
+
+.form.form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form label { display: grid; gap: 7px; color: #68738a; font-size: 0.78rem; font-weight: 800; }
+.form input { width: 100%; min-width: 0; padding: 13px 14px; border: 1px solid #dde3ee; border-radius: 14px; color: #17213a; background: #f8f9fc; font: inherit; }
+.wide, .form button { grid-column: 1 / -1; }
+.hint { grid-column: 1 / -1; margin: 0; color: #8690a3; font-size: 0.78rem; line-height: 1.5; }
+
+@media (max-width: 560px) {
+  .summaryGrid { grid-template-columns: 1fr; }
+  .summaryItem { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .summaryItem span { margin: 0; }
+  .fundActions, .form.form { grid-template-columns: 1fr; }
+}
