@@ -15,3 +15,15 @@
 .categoryList .selectedCategory i { border-color: #536fe8; background: #536fe8; }
 .selectionSummary { margin: 14px 0; color: #7f899c; font-size: .82rem; text-align: center; }
 @media (max-width: 520px) { .modeGrid, .categoryList { grid-template-columns: 1fr; } }
+
+.settlementModal { max-width: 540px; }
+.settlementChoices { display: grid; gap: 11px; margin: 18px 0 14px; }
+.settlementChoices button { display: grid; gap: 5px; width: 100%; padding: 16px; border: 1px solid #dfe4ee; border-radius: 16px; color: #334057; background: #f8f9fc; text-align: left; cursor: pointer; }
+.settlementChoices button:hover:not(:disabled) { border-color: #6079e8; background: #f4f6ff; }
+.settlementChoices button:disabled { cursor: not-allowed; opacity: .5; }
+.settlementChoices b { font-size: .95rem; }
+.settlementChoices span { color: #667187; font-size: .82rem; line-height: 1.45; }
+.settlementChoices small { color: #8a93a5; line-height: 1.45; }
+.settlementChoices .fullDelete { border-color: #efcbd1; color: #a43e50; background: #fff5f6; }
+.settlementChoices .fullDelete:hover { border-color: #dc7181; background: #fff0f2; }
+.warning { display: block; color: #a2703b; line-height: 1.5; }
