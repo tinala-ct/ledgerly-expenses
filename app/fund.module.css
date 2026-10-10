@@ -71,7 +71,7 @@
 .topUpButton { color: #1b3154 !important; background: #fff !important; }
 .settleButton { grid-column: 1 / -1; margin-left: 0 !important; }
 
-.ledger {
+.activity {
   padding: 20px;
   border: 1px solid #e9edf4;
   border-radius: 26px;
@@ -79,16 +79,50 @@
   box-shadow: 0 16px 38px rgba(34, 50, 84, 0.08);
 }
 
-.ledgerHeader {
+.activityHeader, .detailsHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
 }
 
-.ledgerHeader h2 { margin: 0; color: #19233a; font-size: 1.05rem; }
-.ledgerHeader button { border: 0; color: #4567da; background: transparent; font-weight: 800; cursor: pointer; }
+.activityHeader { margin-bottom: 14px; }
+.activityHeader p { margin: 0 0 2px; color: #8a94a8; font-size: .75rem; }
+.activityHeader h2 { margin: 0; color: #19233a; font-size: 1.05rem; }
+.activityHeader button, .detailsHeader button { border: 0; color: #4567da; background: transparent; font-weight: 800; cursor: pointer; }
+
+.activityNav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.activityNav > button {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e6eaf2;
+  border-radius: 18px;
+  color: #263149;
+  background: #f8f9fc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.activityNav > button > b { grid-column: 2; overflow: hidden; font-size: .8rem; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.activityNav > button > i { grid-column: 3; grid-row: 1 / span 2; color: #7b8498; font-style: normal; transition: transform .18s ease; }
+.activityNav > button.activityActive { border-color: #7990ea; background: #f0f3ff; box-shadow: 0 0 0 2px rgba(81, 110, 232, .1); }
+.activityNav > button.activityActive > i { transform: rotate(180deg); }
+.activityIcon { display: grid; grid-row: 1 / span 2; place-items: center; width: 42px; height: 42px; border-radius: 14px; font-size: 1.35rem; font-weight: 400; }
+.topUpIcon { color: #16745b; background: #e7f7f0; }
+.expenseIcon { color: #c65367; background: #fff0f3; }
+.activityLabel { min-width: 0; }
+.activityLabel strong, .activityLabel small { display: block; }
+.activityLabel strong { font-size: .9rem; }
+.activityLabel small { margin-top: 2px; color: #8a94a8; font-size: .7rem; }
+
+.activityDetails { margin-top: 16px; padding-top: 16px; border-top: 1px solid #edf0f5; }
+.detailsHeader { margin-bottom: 8px; }
+.detailsHeader h3 { margin: 0; color: #263149; font-size: .95rem; }
 .empty { margin: 0; color: #8a94a8; font-size: 0.9rem; }
 .topUpList { display: grid; gap: 3px; }
 
@@ -118,6 +152,16 @@
   cursor: pointer;
 }
 
+.expenseList { display: grid; }
+.expenseRow { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid #eef1f6; }
+.expenseRow:first-child { border-top: 0; }
+.expenseCategoryIcon { display: grid; flex: 0 0 auto; place-items: center; width: 39px; height: 39px; border-radius: 13px; font-size: 19px; }
+.expenseRow > div { min-width: 0; flex: 1; }
+.expenseRow > div b, .expenseRow > div small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.expenseRow > div b { color: #263149; font-size: .88rem; }
+.expenseRow > div small { margin-top: 2px; color: #9299aa; font-size: .7rem; }
+.expenseRow > strong { flex: 0 0 auto; font-size: .8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 .form.form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form label { display: grid; gap: 7px; color: #68738a; font-size: 0.78rem; font-weight: 800; }
 .form input { width: 100%; min-width: 0; padding: 13px 14px; border: 1px solid #dde3ee; border-radius: 14px; color: #17213a; background: #f8f9fc; font: inherit; }
@@ -132,4 +176,14 @@
   .summaryItem { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .summaryItem span { margin: 0; }
   .fundActions, .form.form { grid-template-columns: 1fr; }
+  .activity { padding: 16px; }
+  .activityHeader > button { font-size: .72rem; }
+  .activityNav > button { grid-template-columns: 38px minmax(0, 1fr) auto; gap: 8px; padding: 10px; }
+  .activityIcon { width: 38px; height: 38px; border-radius: 12px; }
+  .activityNav > button > b { font-size: .72rem; }
+  .expenseRow { gap: 8px; }
+}
+
+@media (max-width: 390px) {
+  .activityNav { grid-template-columns: 1fr; }
 }
